@@ -123,6 +123,89 @@ function escapeHtml(value) {
     .replaceAll("'", '&#039;');
 }
 
+function renderNotFoundPage() {
+  return `<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Sayfa bulunamadı | Kamu İlanları</title>
+  <style>
+    :root { --ink: #17202a; --muted: #53606b; --blue: #145da0; --blue-dark: #0e4679; --paper: #fff; --wash: #f4f6f8; --line: #d9e0e6; --accent: #d96b3f; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: var(--wash); font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    a { color: var(--blue); }
+    .site-header { border-bottom: 1px solid var(--line); background: var(--paper); }
+    .header-inner, main, .site-footer-inner { width: min(calc(100% - 48px), 1180px); margin: 0 auto; }
+    .header-inner { display: flex; min-height: 78px; align-items: center; }
+    .brand { display: inline-flex; align-items: center; gap: 13px; color: var(--ink); text-decoration: none; }
+    .brand-mark { display: grid; width: 38px; height: 38px; place-items: center; border: 2px solid var(--blue); color: var(--blue); font: 700 20px/1 Georgia, serif; }
+    .brand-name { font: 700 22px/1 Georgia, "Times New Roman", serif; }
+    main { display: grid; min-height: calc(100vh - 203px); align-content: center; padding: 64px 0; }
+    .content { max-width: 680px; }
+    .eyebrow, .footer-eyebrow { margin: 0 0 12px; color: var(--accent); font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { max-width: 640px; margin: 0 0 16px; font: 400 clamp(2.7rem, 7vw, 5rem)/1.02 Georgia, "Times New Roman", serif; letter-spacing: -.045em; }
+    .description { max-width: 560px; margin: 0 0 28px; color: var(--muted); font-size: 17px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .button { display: inline-flex; align-items: center; padding: 10px 14px; border: 1px solid var(--blue); color: var(--paper); background: var(--blue); font-weight: 700; text-decoration: none; }
+    .button:hover { background: var(--blue-dark); }
+    .button.secondary { color: var(--blue); background: var(--paper); }
+    .button.secondary:hover { color: var(--blue-dark); background: #f8fbfd; }
+    .help { max-width: 440px; margin-top: 42px; padding: 16px 18px; border-left: 3px solid var(--accent); color: var(--muted); background: var(--paper); }
+    .help strong { display: block; margin-bottom: 3px; color: var(--ink); font: 400 20px/1.2 Georgia, serif; }
+    .site-footer { border-top: 1px solid var(--line); background: var(--paper); }
+    .site-footer-inner { display: flex; min-height: 124px; align-items: center; justify-content: space-between; gap: 24px; padding: 26px 0; }
+    .footer-eyebrow { margin-bottom: 4px; font-size: 11px; }
+    .footer-copy { margin: 0; color: var(--muted); font-size: 14px; }
+    .contact-link { color: var(--blue); font-weight: 700; text-decoration: none; }
+    .contact-link:hover { text-decoration: underline; }
+    @media (max-width: 600px) {
+      .header-inner, main, .site-footer-inner { width: min(calc(100% - 28px), 1180px); }
+      .header-inner { min-height: 68px; }
+      .brand-name { font-size: 20px; }
+      main { min-height: calc(100vh - 185px); padding: 48px 0; }
+      .site-footer-inner { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="/" aria-label="Kamu İlanları ana sayfa">
+        <span class="brand-mark" aria-hidden="true">K</span>
+        <span class="brand-name">Kamu İlanları</span>
+      </a>
+    </div>
+  </header>
+  <main>
+    <div class="content">
+      <p class="eyebrow">404 · Sayfa bulunamadı</p>
+      <h1>Bu ilan artık burada değil.</h1>
+      <p class="description">Bağlantı yanlış olabilir veya ilan yayından kaldırılmış olabilir. Güncel ilanlara dönerek yeni bir arama yapabilirsiniz.</p>
+      <div class="actions">
+        <a class="button" href="/">İlanlara dön <span aria-hidden="true">↗</span></a>
+        <a class="button secondary" href="/">Yeni arama yap</a>
+      </div>
+      <div class="help">
+        <strong>Bir sorun mu var?</strong>
+        Bağlantının hatalı olduğunu düşünüyorsanız <a href="mailto:mc@envai.tr">mc@envai.tr</a> adresinden bize ulaşabilirsiniz.
+      </div>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <div>
+        <p class="footer-eyebrow">Yardıma mı ihtiyacınız var?</p>
+        <p class="footer-copy">Kamu ve akademik ilanları tek yerde takip edin.</p>
+      </div>
+      <a class="contact-link" href="mailto:mc@envai.tr">mc@envai.tr ↗</a>
+    </div>
+  </footer>
+</body>
+</html>`;
+}
+
 function renderJobDetailPage(job, pageUrl) {
   const title = job.job_title || 'İlan detayı';
   const organization = job.organization_name || 'Kamu İlanları';
@@ -487,13 +570,13 @@ app.get('/api/jobs/:jobId', async (req, res) => {
 app.get('/ilan/:jobId', async (req, res) => {
   const pipeline = publicJobLookupPipeline(req.params.jobId);
   if (!pipeline) {
-    return res.status(400).send('Invalid job URL');
+    return res.status(404).type('html').send(renderNotFoundPage());
   }
 
   try {
     const [job] = await Job.aggregate(pipeline);
     if (!job) {
-      return res.status(404).send('Job not found');
+      return res.status(404).type('html').send(renderNotFoundPage());
     }
 
     const pageUrl = getPublicUrl(req, req.originalUrl);
@@ -579,6 +662,14 @@ app.get('/pdf-viewer', async (req, res) => {
 
 // Healthcheck
 app.get('/api/health', (req, res) => res.json({ ok: true }));
+
+app.use((req, res) => {
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+
+  res.status(404).type('html').send(renderNotFoundPage());
+});
 
 // DB bağlantısı ve sunucu başlatma
 const PORT = process.env.PORT || 3003;
