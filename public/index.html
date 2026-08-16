@@ -529,6 +529,56 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    .site-footer {
+      border-top: 1px solid var(--line);
+      background: var(--paper);
+    }
+
+    .site-footer-inner {
+      display: flex;
+      width: min(calc(100% - 48px), var(--max-width));
+      min-height: 124px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 32px;
+      margin: 0 auto;
+      padding: 26px 0;
+    }
+
+    .footer-eyebrow {
+      margin: 0 0 5px;
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .footer-copy {
+      max-width: 570px;
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 14px;
+    }
+
+    .contact-link {
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border: 1px solid var(--blue);
+      color: var(--blue);
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .contact-link:hover {
+      color: var(--paper);
+      background: var(--blue);
+    }
+
     @media (max-width: 820px) {
       .intro { grid-template-columns: 1fr; gap: 24px; }
       .intro-aside { max-width: 340px; }
@@ -553,6 +603,7 @@
       .card { padding: 18px; }
       .card-title { font-size: 19px; }
       .results-footer { justify-content: flex-start; }
+      .site-footer-inner { width: min(calc(100% - 28px), var(--max-width)); align-items: flex-start; flex-direction: column; gap: 16px; }
     }
   </style>
 
@@ -641,6 +692,16 @@
       </div>
     </section>
   </main>
+
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <div>
+        <p class="footer-eyebrow">Yardıma mı ihtiyacınız var?</p>
+        <p class="footer-copy">Bir sorunla karşılaşırsanız veya bir ilan hakkında geri bildirim paylaşmak isterseniz bize ulaşın.</p>
+      </div>
+      <a class="contact-link" href="mailto:mc@envai.tr">mc@envai.tr <span aria-hidden="true">↗</span></a>
+    </div>
+  </footer>
 
   <script>
     let debounceTimer;
