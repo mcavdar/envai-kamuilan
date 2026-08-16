@@ -702,13 +702,13 @@
         : '';
       const jobTitle = escapeHTML(job.job_title || 'Unvan belirtilmemiş');
       const titleMarkup = job.job_id
-        ? `<a class="card-title card-title-link" href="/ilan/${encodeURIComponent(job.job_id)}" itemprop="title">${jobTitle}</a>`
-        : `<div class="card-title" itemprop="title">${jobTitle}</div>`;
+        ? `<a class="card-title card-title-link" href="/ilan/${encodeURIComponent(job.job_id)}">${jobTitle}</a>`
+        : `<div class="card-title">${jobTitle}</div>`;
 
       return `
-        <article class="card" itemscope itemtype="https://schema.org/JobPosting">
+        <article class="card">
           ${titleMarkup}
-          <div class="card-subtitle" itemprop="hiringOrganization">${escapeHTML(job.organization_name || '')}</div>
+          <div class="card-subtitle">${escapeHTML(job.organization_name || '')}</div>
           ${job.announcement_title ? `<div class="card-subtitle">${escapeHTML(job.announcement_title)}</div>` : ''}
 
           ${job.number_of_positions ? `<div class="card-meta"><span class="meta-item"><span class="meta-label">Kadro</span> ${escapeHTML(job.number_of_positions)}</span></div>` : ''}
