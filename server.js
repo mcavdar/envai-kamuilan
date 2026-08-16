@@ -273,6 +273,58 @@ function getPublicUrl(req, pathname) {
   return new URL(pathname, `${baseUrl}/`).toString();
 }
 
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const jobs = await Job.aggregate([
+      {
+        $unwind: {
+          path: "$extract_result.job_postings",
+          includeArrayIndex: "__postingIndex"
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          job_id: {
+            $concat: [
+              { $toString: "$_id" },
+              "-",
+              { $toString: "$__postingIndex" }
+            ]
+          }
+        }
+      }
+    ]);
+
+    const urls = [getPublicUrl(req, '/')]
+      .concat(jobs.map(job => getPublicUrl(req, `/ilan/${job.job_id}`)));
+    const urlEntries = urls
+      .map(url => `  <url><loc>${escapeHtml(url)}</loc></url>`)
+      .join('\n');
+
+    const sitemap = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+      urlEntries,
+      '</urlset>'
+    ].join('\n');
+
+    res.type('application/xml').send(sitemap);
+  } catch (err) {
+    console.error(err);
+    res.status(500).type('text/plain').send('Unable to generate sitemap');
+  }
+});
+
+app.get('/robots.txt', (req, res) => {
+  const sitemapUrl = getPublicUrl(req, '/sitemap.xml');
+  res.type('text/plain').send([
+    'User-agent: *',
+    'Allow: /',
+    `Sitemap: ${sitemapUrl}`
+  ].join('\n'));
+});
+
 // --- Distinct Mezuniyetler API ---
 app.get('/api/jobs/mezuniyetler', async (req, res) => {
   try {
