@@ -21,6 +21,7 @@ services:
       - ilanlar_network
 
   app:
+    image: ${APP_IMAGE:-envai-kamuilan-app}
     build:
       context: .
       dockerfile: Dockerfile
