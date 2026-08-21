@@ -499,6 +499,7 @@ app.get('/api/jobs', async (req, res) => {
         { "extract_result.announcement_title": regex },
         { "extract_result.organization_name": regex },
         { "extract_result.job_postings.job_title": regex },
+        { "extract_result.job_postings.location": regex },
         { "extract_result.job_postings.job_description": regex },
         { "extract_result.job_postings.qualifications": regex },
         { "extract_result.job_postings.specific_requirements": regex }
