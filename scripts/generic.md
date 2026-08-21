@@ -32,7 +32,7 @@
             "type": "object",
             "properties": {
               "job_title": {
-                "description": "The specific title of the job position (e.g., 'Research Assistant', 'Software Engineer').",
+                "description": "The specific title of the job position (e.g., 'Araştırma Görevlisi', 'Yazılım Mühendisi').",
                 "type": "string"
               },
               "department": {
@@ -44,7 +44,7 @@
                 "type": "number"
               },
               "location": {
-                "description": "The physical location of the job (e.g., city, campus, specific address).",
+                "description": "The physical location of the job (e.g., şehir, kampüs, belirli adres).",
                 "type": "string"
               },
               "job_description": {
@@ -52,7 +52,7 @@
                 "type": "string"
               },
               "qualifications": {
-                "description": "A list of general qualifications required for this specific job (e.g., education level, field of study, experience, skills).",
+                "description": "A list of general qualifications required for this specific job (e.g., eğitim düzeyi, öğrenim alanı, deneyim, beceriler).",
                 "type": "array",
                 "items": {
                   "type": "string"
@@ -89,7 +89,7 @@
           "type": "string"
         },
         "application_method": {
-          "description": "The method(s) by which applications can be submitted (e.g., 'Online', 'Mail', 'In-person', 'Email').",
+          "description": "The method(s) by which applications can be submitted (e.g., 'Çevrimiçi', 'Posta', 'Şahsen', 'E-posta').",
           "type": "string"
         },
         "application_period": {
@@ -141,11 +141,11 @@
           }
         },
         "employment_type": {
-          "description": "The general type of employment offered (e.g., 'Full-time', 'Part-time', 'Contract', 'Permanent').",
+          "description": "The general type of employment offered (e.g., 'Tam zamanlı', 'Yarı zamanlı', 'Sözleşmeli', 'Kadrolu').",
           "type": "string"
         },
         "evaluation_process": {
-          "description": "A description of the stages and methods used for evaluating applicants (e.g., pre-selection, interviews, exams).",
+          "description": "A description of the stages and methods used for evaluating applicants (e.g., ön değerlendirme, mülakatlar, sınavlar).",
           "type": "array",
           "items": {
             "type": "string"
@@ -156,7 +156,7 @@
           "type": "object",
           "properties": {
             "exam_type": {
-              "description": "The type of exam (e.g., 'Written Exam', 'Oral Exam', 'Practical Exam').",
+              "description": "The type of exam (e.g., 'Yazılı Sınav', 'Sözlü Sınav', 'Uygulamalı Sınav').",
               "type": "string"
             },
             "exam_date": {
