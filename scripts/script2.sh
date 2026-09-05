@@ -35,47 +35,47 @@ mkdir -p "data/${last%.html}"
 
 
 
-# ### Run only for incremental update without renameCollection
-# awk '/ContentColumn/ {found=1} found' "$last" | 
-# grep "<a href='ilanDetay.aspx?kod=[^']*'" -o |
-# grep "'.*'" -o  | 
-# sed "s|^'|'https://kamuilan.sbb.gov.tr/|g" |
-# xargs -n 1 -I {} sh -c '
+### Run only for incremental update without renameCollection
+awk '/ContentColumn/ {found=1} found' "$last" | 
+grep "<a href='ilanDetay.aspx?kod=[^']*'" -o |
+grep "'.*'" -o  | 
+sed "s|^'|'https://kamuilan.sbb.gov.tr/|g" |
+xargs -n 1 -I {} sh -c '
 
-# file_name=$(curl -Is -H "Referer: https://kamuilan.sbb.gov.tr/arsiv.aspx" "{}" |
-    # grep -i "Content-Disposition" | 
-    # sed -n "s/.*filename=\(.*\)$/\1/p")
+file_name=$(curl -Is -H "Referer: https://kamuilan.sbb.gov.tr/arsiv.aspx" "{}" |
+    grep -i "Content-Disposition" | 
+    sed -n "s/.*filename=\(.*\)$/\1/p")
 
-# echo "$file_name"
+echo "$file_name"
 
 
-# escaped_file_name=$(
-# printf "%s" "$file_name" |
-# tr -d "\r\n" |
-# sed "s/[\"\\]/\\&/g"
-# )
+escaped_file_name=$(
+printf "%s" "$file_name" |
+tr -d "\r\n" |
+sed "s/[\"\\]/\\&/g"
+)
 
-# echo "$escaped_file_name"
-# row_count=$(sudo docker exec -i mongo_ilanlar mongosh ilanlar_db --quiet --eval "db.jobs.countDocuments({ file_name: \"$escaped_file_name\" })")
-# if [ "$row_count" -gt 0 ]; then
-  # echo "File name found: $row_count row(s) found."
-# else
-  # echo "Its a new file. lets extract data"
-  # file_part=$(echo "{}" | sed "s|/|_|g")
-  # file_out="data/${2%.html}/${file_part}.pdf"  
-  # echo $file_out
-  # curl -H "Referer: https://kamuilan.sbb.gov.tr/arsiv.aspx" "{}" --max-time 150 -o "$file_out"
-  # sleep 1
-# fi
-# ' _ "{}" "$last"
-# ###
+echo "$escaped_file_name"
+row_count=$(sudo docker exec -i mongo_ilanlar mongosh ilanlar_db --quiet --eval "db.jobs.countDocuments({ file_name: \"$escaped_file_name\" })")
+if [ "$row_count" -gt 0 ]; then
+  echo "File name found: $row_count row(s) found."
+else
+  echo "Its a new file. lets extract data"
+  file_part=$(echo "{}" | sed "s|/|_|g")
+  file_out="data/${2%.html}/${file_part}.pdf"  
+  echo $file_out
+  curl -H "Referer: https://kamuilan.sbb.gov.tr/arsiv.aspx" "{}" --max-time 150 -o "$file_out"
+  sleep 1
+fi
+' _ "{}" "$last"
+###
 
 
 ###############################################################################
 # Backup existing jobs collection
 ###############################################################################
 sudo docker exec -i "$MONGO_CONTAINER" mongosh --eval \
-'db.getSiblingDB("'"$MONGO_DB"'").jobs.renameCollection("jobs_backup1021")'
+'db.getSiblingDB("'"$MONGO_DB"'").jobs.renameCollection("jobs_backup001")'
 
 ###############################################################################
 # Download only new PDFs
@@ -103,7 +103,7 @@ row_count=$(
 sudo docker exec -i "'"$MONGO_CONTAINER"'" \
 mongosh "'"$MONGO_DB"'" \
 --quiet \
---eval "db.jobs_backup1021.countDocuments({file_name:\"$escaped_file_name\"})"
+--eval "db.jobs_backup001.countDocuments({file_name:\"$escaped_file_name\"})"
 )
 
 if [[ "$row_count" -gt 0 ]]; then
@@ -114,7 +114,7 @@ if [[ "$row_count" -gt 0 ]]; then
     mongosh "'"$MONGO_DB"'" \
     --quiet \
     --eval "
-        db.jobs_backup1021.find({
+        db.jobs_backup001.find({
             file_name: \"$escaped_file_name\"
         }).forEach(function(doc){
             db.jobs.insertOne(doc);
@@ -201,7 +201,7 @@ for file in *.txt; do
     project_id=$(jq -r '.project_id' "$file")
 
   
-    parameters=$(jq -r '.parameters' /home/mc/repos/kpss/generic.md)
+    parameters=$(jq -r '.parameters' /home/mc/repos/envai-kamuilan/scripts/generic.md)
 
 
     curl -X POST \

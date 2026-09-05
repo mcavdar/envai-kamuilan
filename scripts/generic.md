@@ -278,7 +278,6 @@
     "granular_bboxes": [],
     "parse_tier": null,
     "parse_config_id": null,
-    "product_type": "extract_v2",
     "extract_version": "latest"
   }
 }
