@@ -1,8 +1,44 @@
+version: "3.9"
+
 services:
-  app:
-    command: npm run dev
+  mongodb:
+    image: mongo:7
+    container_name: mongo_ilanlar
+    restart: unless-stopped
     environment:
-      NODE_ENV: development
+      MONGO_INITDB_DATABASE: ilanlar_db
     volumes:
-      - .:/app:cached
-      - /app/node_modules
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    ports:
+      - "127.0.0.1:27017:27017"
+    networks:
+      - ilanlar_network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: job_app
+    restart: unless-stopped
+    ports:
+      - "192.168.1.160:3003:3003"
+    env_file:
+      - .env
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - ilanlar_network
+
+volumes:
+  mongo_data:
+
+networks:
+  ilanlar_network:
+    driver: bridge

@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import axios from 'axios';
+import https from 'https';
 
 dotenv.config();
 
@@ -636,6 +637,9 @@ app.get('/pdf-viewer', async (req, res) => {
         }
 
         const response = await axios.get(parsedUrl.toString(), {
+    httpsAgent: new https.Agent({
+        rejectUnauthorized: false
+    }),
             headers: {
                 'Referer': 'https://kamuilan.sbb.gov.tr/arsiv.aspx',
             },
