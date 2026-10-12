@@ -713,8 +713,8 @@ export function normalizePdfTarget(rawTargetUrl) {
   let normalized = rawTargetUrl.trim();
 
   normalized = normalized.replace(
-    /^https:__kamuilan\.sbb\.gov\.tr_/i,
-    'https://kamuilan.sbb.gov.tr'
+    /^https:__kamuilan\.sbb\.gov\.tr_\/?/i,
+    'https://kamuilan.sbb.gov.tr/'
   );
 
   try {

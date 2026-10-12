@@ -30,6 +30,16 @@ test('normalizePdfTarget normalizes legacy sbb URL patterns', () => {
   assert.equal(normalized, 'https://kamuilan.sbb.gov.tr/files/2024%2Breport.pdf');
 });
 
+test('normalizePdfTarget accepts the legacy URL from the PDF viewer link', () => {
+  const requestUrl = new URL(
+    'https://kamuilan.envai.tr/pdf-viewer?targetUrl=https%3A__kamuilan.sbb.gov.tr_ilanDetay.aspx%3Fkod%3DJJjMBFt%252bBp2sZt%252bj3QoYdDBoqJvQ25RCXg%252ffAFgdQoxsboKxsT0d04qXytr8mnczOUZcUcVmKrJ9gsQrgR4TVlYbkc2eqbyKwmVYBeyPJ%252bfft41F7jOx0QrJFLKzRGRj'
+  );
+  const normalized = normalizePdfTarget(requestUrl.searchParams.get('targetUrl'));
+
+  assert.equal(normalized.startsWith('https://kamuilan.sbb.gov.tr/ilanDetay.aspx?kod='), true);
+  assert.equal(isAllowedPdfUrl(new URL(normalized)), true);
+});
+
 test('normalizeSchemaDate and normalizeEmploymentType format structured data correctly', () => {
   assert.equal(normalizeSchemaDate('31.12.2024'), '2024-12-31');
   assert.equal(normalizeSchemaDate('2025-01-05'), '2025-01-05');
