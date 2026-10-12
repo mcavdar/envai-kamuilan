@@ -3,8 +3,11 @@ import assert from 'node:assert/strict';
 
 import {
   connectDatabase,
+  createSearchRegex,
   isAllowedPdfUrl,
+  normalizeEmploymentType,
   normalizePdfTarget,
+  normalizeSchemaDate,
   parsePositiveInteger,
 } from '../server.js';
 
@@ -24,6 +27,24 @@ test('parsePositiveInteger rejects invalid or unsafe values', () => {
 test('normalizePdfTarget normalizes legacy sbb URL patterns', () => {
   const normalized = normalizePdfTarget('https:__kamuilan.sbb.gov.tr_/files/2024+report.pdf');
   assert.equal(normalized, 'https://kamuilan.sbb.gov.tr/files/2024%2Breport.pdf');
+});
+
+test('normalizeSchemaDate and normalizeEmploymentType format structured data correctly', () => {
+  assert.equal(normalizeSchemaDate('31.12.2024'), '2024-12-31');
+  assert.equal(normalizeSchemaDate('2025-01-05'), '2025-01-05');
+  assert.equal(normalizeEmploymentType('Kadrolu / Tam Zamanlı'), 'FULL_TIME');
+  assert.equal(normalizeEmploymentType('Sözleşmeli'), 'CONTRACTOR');
+});
+
+test('createSearchRegex matches Turkish characters, case variants, and normalized whitespace', () => {
+  const search = value => {
+    const { $regex, $options } = createSearchRegex(value);
+    return new RegExp($regex, $options).test('ÇAĞRI   ÖĞRETİM ÜYESİ');
+  };
+
+  assert.equal(search('cagri ogretim uyesi'), true);
+  assert.equal(search('ÇAĞRI   ÖĞRETİM ÜYESİ'), true);
+  assert.equal(search('cagri ogrenci'), false);
 });
 
 test('isAllowedPdfUrl only allows HTTPS sbb.gov.tr URLs', () => {

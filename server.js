@@ -59,6 +59,33 @@ function escapeRegex(text) {
     return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
 }
 
+const turkishSearchCharacterGroups = {
+  c: 'cCçÇ',
+  ç: 'cCçÇ',
+  g: 'gGğĞ',
+  ğ: 'gGğĞ',
+  i: 'iIİı',
+  ı: 'iIİı',
+  o: 'oOöÖ',
+  ö: 'oOöÖ',
+  s: 'sSşŞ',
+  ş: 'sSşŞ',
+  u: 'uUüÜ',
+  ü: 'uUüÜ'
+};
+
+export function createSearchRegex(value) {
+  const normalized = value.normalize('NFC').trim().replace(/\s+/gu, ' ').toLocaleLowerCase('tr-TR');
+  const pattern = Array.from(normalized, character => {
+    if (character === ' ') return '\\s+';
+
+    const turkishGroup = turkishSearchCharacterGroups[character];
+    return turkishGroup ? `[${turkishGroup}]` : escapeRegex(character);
+  }).join('');
+
+  return { $regex: pattern, $options: 'i' };
+}
+
 const jobProjection = {
   _id: 0,
   job_id: {
@@ -70,6 +97,7 @@ const jobProjection = {
   },
   announcement_title: "$extract_result.announcement_title",
   organization_name: "$extract_result.organization_name",
+  datePosted: "$extract_result.datePosted",
   application_start_date: "$extract_result.application_start_date",
   application_end_date: "$extract_result.application_end_date",
   application_url: "$extract_result.application_url",
@@ -80,6 +108,12 @@ const jobProjection = {
   qualifications: "$extract_result.job_postings.qualifications",
   specific_requirements: "$extract_result.job_postings.specific_requirements",
   number_of_positions: "$extract_result.job_postings.number_of_positions",
+  location: "$extract_result.job_postings.location",
+  jobLocation: "$extract_result.job_postings.jobLocation",
+  employment_type: "$extract_result.job_postings.employment_type",
+  employmentType: "$extract_result.job_postings.employmentType",
+  salary_information: "$extract_result.job_postings.salary_information",
+  baseSalary: "$extract_result.job_postings.baseSalary",
   mezuniyet: "$extract_result.job_postings.mezuniyet"
 };
 
@@ -122,6 +156,67 @@ function escapeHtml(value) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
+}
+
+export function normalizeSchemaDate(value) {
+  if (typeof value !== 'string') return null;
+
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const isoMatch = /^\d{4}-\d{2}-\d{2}$/.exec(trimmed);
+  if (isoMatch) return trimmed;
+
+  const dmyMatch = /^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/.exec(trimmed);
+  if (dmyMatch) {
+    const [, day, month, year] = dmyMatch;
+    const date = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+    if (!Number.isNaN(date.getTime())) {
+      return date.toISOString().slice(0, 10);
+    }
+  }
+
+  const parsed = new Date(trimmed);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toISOString().slice(0, 10);
+  }
+
+  return null;
+}
+
+export function normalizeEmploymentType(value) {
+  if (typeof value !== 'string') return 'FULL_TIME';
+
+  const lowered = value.toLowerCase();
+  if (lowered.includes('tam') || lowered.includes('kadrolu') || lowered.includes('full')) return 'FULL_TIME';
+  if (lowered.includes('yarı') || lowered.includes('part')) return 'PART_TIME';
+  if (lowered.includes('sözleşme') || lowered.includes('contract') || lowered.includes('temporary')) return 'CONTRACTOR';
+  if (lowered.includes('geçici') || lowered.includes('dönem') || lowered.includes('temporary')) return 'TEMPORARY';
+  if (lowered.includes('sağlık') || lowered.includes('intörn') || lowered.includes('staj')) return 'OTHER';
+
+  return 'FULL_TIME';
+}
+
+function normalizeBaseSalary(value) {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
+  const amountMatch = /\d+(?:[.,]\d{1,3})*/.exec(trimmed);
+  if (!amountMatch) return undefined;
+
+  const numericValue = Number(amountMatch[0].replace('.', '').replace(',', '.'));
+  if (!Number.isFinite(numericValue)) return undefined;
+
+  return {
+    '@type': 'MonetaryAmount',
+    currency: 'TRY',
+    value: {
+      '@type': 'QuantitativeValue',
+      value: numericValue,
+      unitText: 'TRY'
+    }
+  };
 }
 
 function renderNotFoundPage() {
@@ -224,6 +319,13 @@ function renderJobDetailPage(job, pageUrl) {
     ? `/pdf-viewer?targetUrl=${encodeURIComponent(fileTarget)}`
     : '';
   const shareHtml = '<p><button class="button secondary" id="shareJob" type="button">Paylaş</button> <span id="shareStatus" role="status" aria-live="polite"></span></p>';
+  const normalizedLocation = [job.jobLocation, job.location, job['jobLocation'], job['location']]
+    .find(value => typeof value === 'string' && value.trim()) || 'Türkiye';
+  const normalizedDatePosted = normalizeSchemaDate(job.datePosted || job.application_start_date);
+  const normalizedValidThrough = normalizeSchemaDate(job.application_end_date || job.validThrough);
+  const normalizedEmploymentType = normalizeEmploymentType(job.employment_type || job.employmentType);
+  const normalizedBaseSalary = normalizeBaseSalary(job.salary_information || job.baseSalary);
+
   const structuredData = JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'JobPosting',
@@ -234,7 +336,19 @@ function renderJobDetailPage(job, pageUrl) {
       name: organization
     },
     url: pageUrl,
-    validThrough: job.application_end_date || undefined
+    datePosted: normalizedDatePosted || undefined,
+    validThrough: normalizedValidThrough || undefined,
+    employmentType: normalizedEmploymentType,
+    jobLocation: {
+      '@type': 'Place',
+      name: normalizedLocation,
+      address: {
+        '@type': 'PostalAddress',
+        addressCountry: 'TR',
+        addressLocality: normalizedLocation
+      }
+    },
+    baseSalary: normalizedBaseSalary || undefined
   }).replaceAll('<', '\\u003c');
 
   const qualificationsHtml = qualifications.length
@@ -478,23 +592,19 @@ app.get('/api/jobs', async (req, res) => {
     const match = {};
 
     if (unvanFilter) {
-      match["extract_result.job_postings.job_title"] = {
-        $regex: escapeRegex(unvanFilter),
-        $options: "i"
-      };
+      match["extract_result.job_postings.job_title"] = createSearchRegex(unvanFilter);
     }
 
     if (mezuniyetFilter) {
-      const safeMez = escapeRegex(mezuniyetFilter);
       match.$or = match.$or || [];
       match.$or.push(
-        { "extract_result.job_postings.mezuniyet": { $regex: safeMez, $options: "i" } },
-        { "extract_result.job_postings.qualifications": { $regex: safeMez, $options: "i" } }
+        { "extract_result.job_postings.mezuniyet": createSearchRegex(mezuniyetFilter) },
+        { "extract_result.job_postings.qualifications": createSearchRegex(mezuniyetFilter) }
       );
     }
 
     if (keywordFilter) {
-      const regex = { $regex: escapeRegex(keywordFilter), $options: "i" };
+      const regex = createSearchRegex(keywordFilter);
 
       const keywordConditions = [
         { "extract_result.announcement_title": regex },
