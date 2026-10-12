@@ -17,7 +17,7 @@
           "description": "The main title or subject of the job announcement.",
           "type": "string"
         },
-        "announcement_date": {
+        "datePosted": {
           "description": "The date when the announcement was officially issued. Format: YYYY-MM-DD.",
           "type": "string"
         },
@@ -43,7 +43,7 @@
                 "description": "The number of available positions for this specific job title.",
                 "type": "number"
               },
-              "location": {
+              "jobLocation": {
                 "description": "The physical location of the job (e.g., şehir, kampüs, belirli adres).",
                 "type": "string"
               },

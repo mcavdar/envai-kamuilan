@@ -75,7 +75,7 @@ fi
 # Backup existing jobs collection
 ###############################################################################
 sudo docker exec -i "$MONGO_CONTAINER" mongosh --eval \
-'db.getSiblingDB("'"$MONGO_DB"'").jobs.renameCollection("jobs_backup001")'
+'db.getSiblingDB("'"$MONGO_DB"'").jobs.renameCollection("jobs_backup003")'
 
 ###############################################################################
 # Download only new PDFs
@@ -103,7 +103,7 @@ row_count=$(
 sudo docker exec -i "'"$MONGO_CONTAINER"'" \
 mongosh "'"$MONGO_DB"'" \
 --quiet \
---eval "db.jobs_backup001.countDocuments({file_name:\"$escaped_file_name\"})"
+--eval "db.jobs_backup003.countDocuments({file_name:\"$escaped_file_name\"})"
 )
 
 if [[ "$row_count" -gt 0 ]]; then
@@ -114,7 +114,7 @@ if [[ "$row_count" -gt 0 ]]; then
     mongosh "'"$MONGO_DB"'" \
     --quiet \
     --eval "
-        db.jobs_backup001.find({
+        db.jobs_backup003.find({
             file_name: \"$escaped_file_name\"
         }).forEach(function(doc){
             db.jobs.insertOne(doc);

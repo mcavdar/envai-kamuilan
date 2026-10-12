@@ -1,18 +1,18 @@
-import os
+import requests
 from pymongo import MongoClient
-from google import genai
 
 mongo = MongoClient("mongodb://localhost:27017")
 db = mongo["ilanlar_db"]
 
 jobs = db["jobs"]
 
+OLLAMA_URL = "http://192.168.1.160:11434/api/generate"
+OLLAMA_MODEL = "gpt-oss:120b:cloud"
 
-# Gemini
-client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 def find_location(extract_result):
     first_posting = extract_result["job_postings"][0]
+
     prompt = f"""
 You are extracting the location of a job announcement.
 
@@ -48,14 +48,29 @@ Hatay, Reyhanlı
 If the location cannot be determined reliably, return exactly:
 NONE
 """
-    response = client.models.generate_content(
-        model="gemma-4-31b-it",
-        contents=prompt,
+
+    response = requests.post(
+        OLLAMA_URL,
+        json={
+            "model": OLLAMA_MODEL,
+            "prompt": prompt,
+            "stream": False,
+            "options": {
+                "temperature": 0
+            },
+        },
+        timeout=120,
     )
-    location = response.text.strip()
+
+    response.raise_for_status()
+
+    location = response.json()["response"].strip()
+
     if location.upper() == "NONE":
         return None
+
     return location
+
 
 for job in jobs.find():
     extract_result = job.get("extract_result")
