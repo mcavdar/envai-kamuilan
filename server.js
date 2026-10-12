@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import compression from 'compression';
 import dotenv from 'dotenv';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import axios from 'axios';
 import https from 'https';
 
@@ -28,7 +28,7 @@ if (configuredPublicBaseUrl) {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const app = express();
+export const app = express();
 app.set('trust proxy', 1);
 app.use(express.json());
 app.use(compression());
@@ -46,7 +46,7 @@ const MAX_PDF_BYTES = 10 * 1024 * 1024;
 const MAX_FILTER_LENGTH = 200;
 const MAX_PAGE_NUMBER = 1_000_000;
 
-function parsePositiveInteger(value, fallback, max) {
+export function parsePositiveInteger(value, fallback, max) {
   if (value === undefined) return fallback;
   if (typeof value !== 'string' || !/^\d+$/.test(value)) return null;
 
@@ -589,12 +589,12 @@ app.get('/ilan/:jobId', async (req, res) => {
   }
 });
 
-function normalizePdfTarget(rawTargetUrl) {
+export function normalizePdfTarget(rawTargetUrl) {
   let normalized = rawTargetUrl.trim();
 
   normalized = normalized.replace(
     /^https:__kamuilan\.sbb\.gov\.tr_/i,
-    'https://kamuilan.sbb.gov.tr/'
+    'https://kamuilan.sbb.gov.tr'
   );
 
   try {
@@ -606,7 +606,7 @@ function normalizePdfTarget(rawTargetUrl) {
   return normalized.replaceAll('+', '%2B');
 }
 
-function isAllowedPdfUrl(url) {
+export function isAllowedPdfUrl(url) {
   const hostname = url.hostname.toLowerCase().replace(/\.$/, '');
   const isAllowedHost = hostname === 'kamuilan.sbb.gov.tr' || hostname.endsWith('.sbb.gov.tr');
 
@@ -676,39 +676,50 @@ app.use((req, res) => {
   res.status(404).type('html').send(renderNotFoundPage());
 });
 
-// DB bağlantısı ve sunucu başlatma
-const PORT = process.env.PORT || 3003;
-const MONGODB_URI = process.env.MONGODB_URI;
+export const PORT = process.env.PORT || 3003;
+export const MONGODB_URI = process.env.MONGODB_URI;
 
-if (!MONGODB_URI) {
-  console.error('MONGODB_URI tanımlı değil (.env dosyanızı kontrol edin)');
-  process.exit(1);
+export async function connectDatabase(databaseUri = MONGODB_URI) {
+  if (!databaseUri) {
+    throw new Error('MONGODB_URI tanımlı değil (.env dosyanızı kontrol edin)');
+  }
+
+  if (mongoose.connection.readyState === 1) {
+    return mongoose.connection;
+  }
+
+  await mongoose.connect(databaseUri);
+  console.log('✅ Connected to MongoDB');
+  return mongoose.connection;
 }
 
-mongoose
-  .connect(MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log("✅ Connected to MongoDB"))
-  .catch((err) => {
-    console.error("❌ MongoDB connection error:", err);
-    process.exit(1);
-  });
-  
-const server = app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
-});
+export async function startServer({ port = PORT, databaseUri = MONGODB_URI } = {}) {
+  await connectDatabase(databaseUri);
 
-const shutdown = () => {
-  console.log("⏳ Shutting down gracefully...");
-  server.close(() => {
-    mongoose.connection.close(false, () => {
-      console.log("✅ MongoDB connection closed");
+  const server = app.listen(port, () => {
+    console.log(`✅ Server running on port ${port}`);
+  });
+
+  const shutdown = () => {
+    console.log('⏳ Shutting down gracefully...');
+    server.close(async () => {
+      if (mongoose.connection.readyState) {
+        await mongoose.connection.close(false);
+        console.log('✅ MongoDB connection closed');
+      }
       process.exit(0);
     });
-  });
-};
+  };
 
-process.on("SIGINT", shutdown);
-process.on("SIGTERM", shutdown);
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
+
+  return server;
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  startServer().catch((err) => {
+    console.error('❌ MongoDB connection error:', err);
+    process.exit(1);
+  });
+}
