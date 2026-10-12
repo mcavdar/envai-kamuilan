@@ -9,6 +9,7 @@ import {
   normalizePdfTarget,
   normalizeSchemaDate,
   parsePositiveInteger,
+  renderJobDetailPage,
 } from '../server.js';
 
 test('parsePositiveInteger accepts valid positive values within the max limit', () => {
@@ -45,6 +46,27 @@ test('createSearchRegex matches Turkish characters, case variants, and normalize
   assert.equal(search('cagri ogretim uyesi'), true);
   assert.equal(search('ÇAĞRI   ÖĞRETİM ÜYESİ'), true);
   assert.equal(search('cagri ogrenci'), false);
+});
+
+test('job detail page emits one JobPosting JSON-LD item with a cleaned location', () => {
+  const html = renderJobDetailPage({
+    job_title: 'Profesör',
+    organization_name: 'Marmara Üniversitesi Rektörlüğü',
+    job_description: 'İlan detayları.',
+    location: 'Istanbul, NONE',
+    datePosted: '2026-09-29',
+    application_end_date: '2026-10-13',
+  }, 'https://kamuilan.envai.tr/ilan/example');
+
+  const scripts = [...html.matchAll(/<script type="application\/ld\+json">([^<]+)<\/script>/g)];
+  assert.equal(scripts.length, 1);
+  assert.equal((html.match(/"@type":"JobPosting"/g) || []).length, 1);
+  assert.doesNotMatch(html, /itemscope|itemprop=|itemtype=/);
+  assert.doesNotMatch(html, /type="`application\/ld\+json`"/);
+
+  const structuredData = JSON.parse(scripts[0][1]);
+  assert.equal(structuredData.jobLocation.name, 'Istanbul');
+  assert.equal(structuredData.jobLocation.address.addressLocality, 'Istanbul');
 });
 
 test('isAllowedPdfUrl only allows HTTPS sbb.gov.tr URLs', () => {

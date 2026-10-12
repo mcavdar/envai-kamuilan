@@ -219,6 +219,17 @@ function normalizeBaseSalary(value) {
   };
 }
 
+function normalizeJobLocation(value) {
+  if (typeof value !== 'string') return null;
+
+  const parts = value
+    .split(',')
+    .map(part => part.trim())
+    .filter(part => part && !['none', 'null', 'unknown', 'belirsiz'].includes(part.toLocaleLowerCase('tr-TR')));
+
+  return parts.length ? parts.join(', ') : null;
+}
+
 function renderNotFoundPage() {
   return `<!doctype html>
 <html lang="tr">
@@ -302,7 +313,7 @@ function renderNotFoundPage() {
 </html>`;
 }
 
-function renderJobDetailPage(job, pageUrl) {
+export function renderJobDetailPage(job, pageUrl) {
   const title = job.job_title || 'İlan detayı';
   const organization = job.organization_name || 'Kamu İlanları';
   const description = job.job_description || 'İlan detayları.';
@@ -319,8 +330,7 @@ function renderJobDetailPage(job, pageUrl) {
     ? `/pdf-viewer?targetUrl=${encodeURIComponent(fileTarget)}`
     : '';
   const shareHtml = '<p><button class="button secondary" id="shareJob" type="button">Paylaş</button> <span id="shareStatus" role="status" aria-live="polite"></span></p>';
-  const normalizedLocation = [job.jobLocation, job.location, job['jobLocation'], job['location']]
-    .find(value => typeof value === 'string' && value.trim()) || 'Türkiye';
+  const normalizedLocation = normalizeJobLocation(job.jobLocation || job.location);
   const normalizedDatePosted = normalizeSchemaDate(job.datePosted || job.application_start_date);
   const normalizedValidThrough = normalizeSchemaDate(job.application_end_date || job.validThrough);
   const normalizedEmploymentType = normalizeEmploymentType(job.employment_type || job.employmentType);
@@ -341,11 +351,11 @@ function renderJobDetailPage(job, pageUrl) {
     employmentType: normalizedEmploymentType,
     jobLocation: {
       '@type': 'Place',
-      name: normalizedLocation,
+      ...(normalizedLocation ? { name: normalizedLocation } : {}),
       address: {
         '@type': 'PostalAddress',
         addressCountry: 'TR',
-        addressLocality: normalizedLocation
+        ...(normalizedLocation ? { addressLocality: normalizedLocation } : {})
       }
     },
     baseSalary: normalizedBaseSalary || undefined
@@ -403,14 +413,14 @@ function renderJobDetailPage(job, pageUrl) {
 <body>
   <main>
     <a class="back" href="/">← Tüm ilanlara dön</a>
-    <article itemscope itemtype="https://schema.org/JobPosting">
-      <h1 itemprop="title">${escapeHtml(title)}</h1>
-      <p class="organization" itemprop="hiringOrganization">${escapeHtml(organization)}</p>
+    <article>
+      <h1>${escapeHtml(title)}</h1>
+      <p class="organization">${escapeHtml(organization)}</p>
       ${job.announcement_title ? `<p class="meta">${escapeHtml(job.announcement_title)}</p>` : ''}
       ${job.number_of_positions ? `<p class="meta"><strong>Kadro:</strong> ${escapeHtml(job.number_of_positions)}</p>` : ''}
       ${job.application_end_date ? `<p class="meta"><strong>Son tarih:</strong> ${escapeHtml(job.application_end_date)}</p>` : ''}
       <h2>Açıklama</h2>
-      <p class="description" itemprop="description">${escapeHtml(description)}</p>
+      <p class="description">${escapeHtml(description)}</p>
       ${qualificationsHtml}
       ${requirementsHtml}
       ${shareHtml}
