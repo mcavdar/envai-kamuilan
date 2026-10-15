@@ -20,6 +20,28 @@ services:
     networks:
       - ilanlar_network
 
+  warp:
+    image: caomingjun/warp:latest
+    container_name: warp
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:1080:1080"
+    environment:
+      - WARP_SLEEP=2
+    cap_add:
+      - NET_ADMIN
+      - MKNOD
+      - AUDIT_WRITE
+    device_cgroup_rules:
+      - "c 10:200 rwm"
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv6.conf.all.disable_ipv6=0
+    volumes:
+      - ./data:/var/lib/cloudflare-warp
+    networks:
+      - ilanlar_network
+
   app:
     build:
       context: .
@@ -30,9 +52,13 @@ services:
       - "192.168.1.160:3003:3003"
     env_file:
       - .env
+    environment:
+      PDF_PROXY_URL: ${PDF_PROXY_URL:-socks5h://warp:1080}
     depends_on:
       mongodb:
         condition: service_healthy
+      warp:
+        condition: service_started
     networks:
       - ilanlar_network
 

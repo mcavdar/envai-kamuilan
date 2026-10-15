@@ -42,7 +42,7 @@ grep "'.*'" -o  |
 sed "s|^'|'https://kamuilan.sbb.gov.tr/|g" |
 xargs -n 1 -I {} sh -c '
 
-file_name=$(curl -Is -H "Referer: https://kamuilan.sbb.gov.tr/arsiv.aspx" "{}" |
+file_name=$(curl --proxy socks5h://127.0.0.1:1080 -Is -H "Referer: https://kamuilan.sbb.gov.tr/arsiv.aspx" "{}" |
     grep -i "Content-Disposition" | 
     sed -n "s/.*filename=\(.*\)$/\1/p")
 
@@ -64,7 +64,7 @@ else
   file_part=$(echo "{}" | sed "s|/|_|g")
   file_out="data/${2%.html}/${file_part}.pdf"  
   echo $file_out
-  curl -H "Referer: https://kamuilan.sbb.gov.tr/arsiv.aspx" "{}" --max-time 150 -o "$file_out"
+  curl --proxy socks5h://127.0.0.1:1080 -H "Referer: https://kamuilan.sbb.gov.tr/arsiv.aspx" "{}" --max-time 150 -o "$file_out"
   sleep 1
 fi
 ' _ "{}" "$last"
@@ -75,7 +75,7 @@ fi
 # Backup existing jobs collection
 ###############################################################################
 sudo docker exec -i "$MONGO_CONTAINER" mongosh --eval \
-'db.getSiblingDB("'"$MONGO_DB"'").jobs.renameCollection("jobs_backup003")'
+'db.getSiblingDB("'"$MONGO_DB"'").jobs.renameCollection("jobs_backup012")'
 
 ###############################################################################
 # Download only new PDFs
@@ -86,7 +86,7 @@ grep "'.*'" -o |
 sed "s|^'|'https://kamuilan.sbb.gov.tr/|g" |
 xargs -n1 -I{} bash -c '
 
-file_name=$(curl --fail -Is \
+file_name=$(curl --fail -Is --proxy socks5h://127.0.0.1:1080 \
     -H "Referer: https://kamuilan.sbb.gov.tr/arsiv.aspx" "{}" |
     grep -i "Content-Disposition" |
     sed -n "s/.*filename=\(.*\)$/\1/p")
@@ -103,7 +103,7 @@ row_count=$(
 sudo docker exec -i "'"$MONGO_CONTAINER"'" \
 mongosh "'"$MONGO_DB"'" \
 --quiet \
---eval "db.jobs_backup003.countDocuments({file_name:\"$escaped_file_name\"})"
+--eval "db.jobs_backup012.countDocuments({file_name:\"$escaped_file_name\"})"
 )
 
 if [[ "$row_count" -gt 0 ]]; then
@@ -114,7 +114,7 @@ if [[ "$row_count" -gt 0 ]]; then
     mongosh "'"$MONGO_DB"'" \
     --quiet \
     --eval "
-        db.jobs_backup003.find({
+        db.jobs_backup012.find({
             file_name: \"$escaped_file_name\"
         }).forEach(function(doc){
             db.jobs.insertOne(doc);
@@ -130,7 +130,7 @@ else
 
     echo "$file_out"
 
-    curl --fail \
+    curl --fail --proxy socks5h://127.0.0.1:1080 \
         -H "Referer: https://kamuilan.sbb.gov.tr/arsiv.aspx" \
         "{}" \
         -o "$file_out"
@@ -255,7 +255,7 @@ for file in *.json; do
         sed "s|https:__kamuilan.sbb.gov.tr_|https://kamuilan.sbb.gov.tr/|g")
 
     file_name=$(
-    curl --fail -I \
+    curl --proxy socks5h://127.0.0.1:1080 --fail -I \
         -H "Referer: https://kamuilan.sbb.gov.tr/arsiv.aspx" \
         "$output_file2" |
         grep -i "Content-Disposition" |

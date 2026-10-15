@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import axios from 'axios';
-import https from 'https';
+import { SocksProxyAgent } from 'socks-proxy-agent';
 
 dotenv.config();
 
@@ -45,6 +45,10 @@ const Job = mongoose.model('Job', jobSchema);
 const MAX_PDF_BYTES = 10 * 1024 * 1024;
 const MAX_FILTER_LENGTH = 200;
 const MAX_PAGE_NUMBER = 1_000_000;
+const pdfProxyUrl = process.env.PDF_PROXY_URL || 'socks5h://127.0.0.1:1080';
+const pdfProxyAgent = new SocksProxyAgent(pdfProxyUrl, {
+  rejectUnauthorized: false
+});
 
 export function parsePositiveInteger(value, fallback, max) {
   if (value === undefined) return fallback;
@@ -757,9 +761,8 @@ app.get('/pdf-viewer', async (req, res) => {
         }
 
         const response = await axios.get(parsedUrl.toString(), {
-    httpsAgent: new https.Agent({
-        rejectUnauthorized: false
-    }),
+            httpsAgent: pdfProxyAgent,
+            proxy: false,
             headers: {
                 'Referer': 'https://kamuilan.sbb.gov.tr/arsiv.aspx',
             },
