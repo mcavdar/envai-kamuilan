@@ -15,6 +15,13 @@ An Express and MongoDB job-listing application that serves a web frontend and pr
 
 Run the test suite with `npm test`.
 
+## PDF extraction scripts
+
+The scripts in `scripts/` load their configuration from `scripts/.env`. Set
+`LLAMAINDEX_API_KEY` there along with the other settings required by the
+selected script. The LlamaIndex requests use this value as a Bearer token.
+Keep this file local; `.env` files are ignored by Git and must not be committed.
+
 ## API
 
 - `GET /api/health` — health check
